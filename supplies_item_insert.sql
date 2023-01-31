@@ -1,0 +1,11 @@
+Insert into mydb.SuppliesItem values(530, 1,1, 'Onion', 20);
+Insert into mydb.SuppliesItem values(531, 2,2, 'Cheese', 39);
+Insert into mydb.SuppliesItem values(532, 3,3, 'Chciken', 64);
+Insert into mydb.SuppliesItem values(533, 4,4, 'Rice', 70);
+Insert into mydb.SuppliesItem values(534, 5,5,'Bell Pepper', 33);
+Insert into mydb.SuppliesItem values(535, 6,6, 'Tomatoes', 24);
+Insert into mydb.SuppliesItem values(536, 7,7,'Fish', 50);
+Insert into mydb.SuppliesItem values(537, 8,8,'Taco Shells', 10);
+Insert into mydb.SuppliesItem values(538, 4,9, 'Fetucchini', 15);
+Insert into mydb.SuppliesItem values(539, 5,10, 'Pizza Dough', 40);
+select * from mydb.SuppliesItem;

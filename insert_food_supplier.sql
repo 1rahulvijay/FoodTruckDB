@@ -1,0 +1,11 @@
+Insert into mydb.FoodSupplier values(530, 'Greg Farms' , 'Wroclaw', 20);
+Insert into mydb.FoodSupplier values(531, 'Jonny Sims' , 'Wroclaw', 39);
+Insert into mydb.FoodSupplier values(532, 'Pollos Hermanos' , 'Wroclaw', 64);
+Insert into mydb.FoodSupplier values(533, 'QFC' , 'Wroclaw', 70);
+Insert into mydb.FoodSupplier values(534, 'RMDX' , 'Wroclaw', 33);
+Insert into mydb.FoodSupplier values(535, 'TRPL' , 'Wroclaw', 24);
+Insert into mydb.FoodSupplier values(536, 'FMCG' , 'Wroclaw', 50);
+Insert into mydb.FoodSupplier values(537, 'Jose Depot' , 'Wroclaw', 10);
+Insert into mydb.FoodSupplier values(538, 'Green Haven' , 'Wroclaw', 15);
+Insert into mydb.FoodSupplier values(539, 'Gregory Farms' , 'Wroclaw', 40);
+select * from mydb.FoodSupplier;

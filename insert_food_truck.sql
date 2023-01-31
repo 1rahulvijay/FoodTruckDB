@@ -1,0 +1,12 @@
+INSERT INTO mydb.foodtruck VALUES (1,'08:30:00','12:30:00','IND',0);
+INSERT INTO mydb.foodtruck VALUES (2,'07:30:00','11:30:00','IND',0);
+INSERT INTO mydb.foodtruck VALUES (3,'13:30:00','19:30:00','IND',0);
+INSERT INTO mydb.foodtruck VALUES (4,'15:00:00','20:30:00','IND',0);
+INSERT INTO mydb.foodtruck VALUES (5,'17:00:00','23:30:00','IND',0);
+INSERT INTO mydb.foodtruck VALUES (6,'09:00:00','15:30:00','IND',0);
+INSERT INTO mydb.foodtruck VALUES (7,'09:00:00','20:00:00','IND',0);
+INSERT INTO mydb.foodtruck VALUES (8,'00:30:00','10:30:00','IND',0);
+INSERT INTO mydb.foodtruck VALUES (9,'00:30:00','07:30:00','IND',0);
+INSERT INTO mydb.foodtruck VALUES (10,'07:30:00','10:30:00','IND',0);
+INSERT INTO mydb.foodtruck VALUES (11,'07:30:00','10:30:00','POL',0);
+SELECT * FROM mydb.foodtruck;

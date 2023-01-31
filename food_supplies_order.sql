@@ -1,0 +1,10 @@
+insert into mydb.FoodSuppliesOrder values(1,100, '2022-12-30', 10, 1000)
+insert into mydb.FoodSuppliesOrder values(2, 100, '2022-12-30', 2, 1000)
+insert into mydb.FoodSuppliesOrder values(3,  100, '2022-12-30', 3, 1000)
+insert into mydb.FoodSuppliesOrder values(6, 100, '2022-12-30', 4, 1000)
+insert into mydb.FoodSuppliesOrder values(4, 100, '2022-12-30', 5, 1000)
+insert into mydb.FoodSuppliesOrder values(5, 100, '2022-12-30', 6, 1000)
+insert into mydb.FoodSuppliesOrder values(7, 100, '2022-12-30', 7, 1000)
+insert into mydb.FoodSuppliesOrder values(8,  100, '2022-12-30', 8, 1000)
+insert into mydb.FoodSuppliesOrder values(9,  100, '2022-12-30', 9, 1000)
+select * from mydb.FoodSuppliesOrder

@@ -1,0 +1,11 @@
+Insert into mydb.FoodtruckLocationDate values(1, 98100, 'Northeastern', 'Seattle', 50205, 1)
+Insert into mydb.FoodtruckLocationDate values(2, 98110, 'West Rochester', 'Seattle', 50206, 2)
+Insert into mydb.FoodtruckLocationDate values(3, 98342, 'Lake City', 'Seattle', 50207, 3)
+Insert into mydb.FoodtruckLocationDate values(4, 98934, 'Lloyd', 'Seattle', 50208, 4)
+Insert into mydb.FoodtruckLocationDate values(5, 98245, 'Clive', 'Seattle', 50209, 5)
+Insert into mydb.FoodtruckLocationDate values(6, 98234, 'Westminster', 'Seattle', 50210, 6)
+Insert into mydb.FoodtruckLocationDate values(7, 98232, 'Buckingham', 'Seattle',50211, 7)
+Insert into mydb.FoodtruckLocationDate values(8, 98167, 'Issaquah', 'Seattle', 50212, 8)
+Insert into mydb.FoodtruckLocationDate values(9, 98104, 'Sammasish', 'Seattle', 50213, 9)
+Insert into mydb.FoodtruckLocationDate values(10, 98196, 'Boren', 'Seattle', 50214, 10)
+select * from mydb.FoodtruckLocationDate

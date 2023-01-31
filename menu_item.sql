@@ -1,0 +1,11 @@
+INSERT INTO mydb.Menu VALUES(1,1,'Burger', 'AmericanBurger', 1);
+INSERT INTO mydb.Menu VALUES(2,2,'Cluck It Up','Pasta',2);
+INSERT INTO mydb.Menu VALUES(3,3,'Pimp My Rice','IND Rice',3);
+INSERT INTO mydb.Menu VALUES(4,4,'Curry Up Now','Pasta',4);
+INSERT INTO mydb.Menu VALUES(5,5,'Easy Slider','Pasta',5);
+INSERT INTO mydb.Menu VALUES(6,6,'Grillenium Falcon','Pasta',6);
+INSERT INTO mydb.Menu VALUES(7,7,'Hamborghini','Pasta',7);
+INSERT INTO mydb.Menu VALUES(8,8,'Guac N Roll','Pasta',8);
+INSERT INTO mydb.Menu VALUES(9,9,'I Dream of Weenie','Pasta',9);
+INSERT INTO mydb.Menu VALUES(10,10,'Ms. Cheezious','Pasta',10);
+SELECT * FROM mydb.Menu;
