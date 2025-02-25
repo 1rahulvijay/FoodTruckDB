@@ -1,0 +1,10 @@
+SELECT 
+    your_date_column,
+    (YEAR(NOW()) - YEAR(your_date_column)) - 
+    CASE 
+        WHEN MONTH(your_date_column) > MONTH(NOW()) 
+             OR (MONTH(your_date_column) = MONTH(NOW()) AND DAY(your_date_column) > DAY(NOW())) 
+        THEN 1 ELSE 0 
+    END AS years_diff,
+    (12 + MONTH(NOW()) - MONTH(your_date_column)) % 12 AS months_diff
+FROM your_table;
