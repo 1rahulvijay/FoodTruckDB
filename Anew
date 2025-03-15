@@ -1,0 +1,145 @@
+import json
+import logging
+import requests
+from redis import Redis
+import pandas as pd
+from typing import Dict, Optional, Union
+
+class DataFetcher:
+    """Class to handle data fetching from Tableau Server."""
+    def __init__(self, server_url: str, api_token: str):
+        self.server_url = server_url
+        self.api_token = api_token
+        self.logger = logging.getLogger(__name__)
+
+    def fetch_data(self) -> Dict[str, pd.DataFrame]:
+        """Fetch data from Tableau Server and return as a dict of view_id: DataFrame."""
+        try:
+            headers = {'Authorization': f'Bearer {self.api_token}'}
+            response = requests.get(f'{self.server_url}/api/data', headers=headers, timeout=600)
+            response.raise_for_status()
+            data = response.json()
+            # Assuming data is a dict with view IDs as keys and data suitable for DataFrames as values
+            # Adjust this based on your actual Tableau API response structure
+            df_dict = {}
+            if isinstance(data, dict):
+                for view_id, view_data in data.items():
+                    df_dict[view_id] = pd.DataFrame(view_data)
+            else:
+                # Fallback: if data isn't a dict, create a single DataFrame and assign a dummy view ID
+                df_dict["default_view"] = pd.DataFrame(data)
+            
+            self.logger.info(f"Successfully fetched data for {len(df_dict)} views from Tableau Server.")
+            return df_dict
+        except Exception as e:
+            self.logger.error(f"Failed to fetch data: {str(e)}")
+            raise
+
+class DataCache:
+    """Class to manage caching with Redis."""
+    def __init__(self, redis_client: Redis):
+        self.redis = redis_client
+        self.logger = logging.getLogger(__name__)
+
+    def set_data(self, key: str, df: pd.DataFrame, ttl: int = 3600) -> None:
+        """Cache a single DataFrame as JSON string with an optional TTL."""
+        try:
+            value = df.to_json(orient='records')
+            self.redis.setex(key, ttl, value)
+            self.logger.info(f"Cached data with key: {key}")
+        except Exception as e:
+            self.logger.error(f"Failed to cache data: {str(e)}")
+            raise
+
+    def set_data_dict(self, base_key: str, df_dict: Dict[str, pd.DataFrame], ttl: int = 3600) -> None:
+        """Cache a dict of DataFrames using view IDs in the keys."""
+        try:
+            for view_id, df in df_dict.items():
+                key = f"{base_key}_{view_id}"
+                self.set_data(key, df, ttl)
+            self.logger.info(f"Cached {len(df_dict)} DataFrames with base key: {base_key}")
+        except Exception as e:
+            self.logger.error(f"Failed to cache DataFrame dict: {str(e)}")
+            raise
+
+    def get_data(self, key: str) -> Optional[pd.DataFrame]:
+        """Retrieve a single DataFrame from cache."""
+        try:
+            data = self.redis.get(key)
+            if data:
+                return pd.read_json(data, orient='records')
+            return None
+        except Exception as e:
+            self.logger.error(f"Failed to retrieve cached data: {str(e)}")
+            return None
+
+    def get_data_dict(self, base_key: str, view_ids: list[str]) -> Dict[str, Optional[pd.DataFrame]]:
+        """Retrieve a dict of DataFrames from cache using view IDs."""
+        try:
+            df_dict = {}
+            for view_id in view_ids:
+                key = f"{base_key}_{view_id}"
+                df = self.get_data(key)
+                df_dict[view_id] = df
+            return df_dict
+        except Exception as e:
+            self.logger.error(f"Failed to retrieve cached DataFrame dict: {str(e)}")
+            return {view_id: None for view_id in view_ids}
+
+class MetricComputer:
+    """Class to compute metrics from DataFrame data."""
+    def __init__(self, df: pd.DataFrame):
+        self.df = df
+        self.logger = logging.getLogger(__name__)
+
+    def compute(self, metric_name: str) -> Union[float, int, None]:
+        """Compute a specific metric from the DataFrame."""
+        try:
+            if self.df.empty:
+                raise ValueError("No data available for computation")
+            
+            if metric_name == "total_count":
+                return len(self.df)
+            elif metric_name == "avg_value":
+                if "value" not in self.df.columns:
+                    raise ValueError("'value' column not found in DataFrame")
+                return self.df["value"].mean()
+            else:
+                self.logger.warning(f"Unknown metric: {metric_name}")
+                return None
+                
+            self.logger.info(f"Computed metric: {metric_name}")
+        except Exception as e:
+            self.logger.error(f"Error computing metric {metric_name}: {str(e)}")
+            return None
+
+# Example usage
+if __name__ == "__main__":
+    # Configure logging
+    logging.basicConfig(level=logging.INFO)
+    
+    # Initialize components
+    fetcher = DataFetcher("https://tableau.example.com", "your-api-token")
+    redis_client = Redis(host='localhost', port=6379, db=0)
+    cache = DataCache(redis_client)
+    
+    # Fetch and cache data
+    try:
+        df_dict = fetcher.fetch_data()
+        view_ids = list(df_dict.keys())  # Get the view IDs for later retrieval
+        
+        # Cache the dict of DataFrames
+        cache.set_data_dict("tableau_data", df_dict)
+        
+        # Retrieve from cache and compute metrics
+        cached_df_dict = cache.get_data_dict("tableau_data", view_ids)
+        for view_id, df in cached_df_dict.items():
+            if df is not None:
+                computer = MetricComputer(df)
+                total = computer.compute("total_count")
+                avg = computer.compute("avg_value")
+                print(f"View {view_id}: Total Count: {total}, Average Value: {avg}")
+            else:
+                print(f"View {view_id}: Failed to retrieve from cache")
+    except Exception as e:
+        logging.error(f"Main execution failed: {str(e)}")
