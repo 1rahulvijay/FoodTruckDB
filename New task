@@ -1,0 +1,28 @@
+from . import create_app, celery
+from .models import DataFetcher, DataCache
+import logging
+
+app = create_app()
+logger = logging.getLogger(__name__)
+
+@celery.task(bind=True, max_retries=3, default_retry_delay=60)
+def fetch_and_cache_data(self, source: str = "tableau"):
+    """
+    Celery task to fetch data from Tableau (or another expensive source) and cache it.
+    """
+    with app.app_context():
+        try:
+            config = app.config
+            token = config.get("TABLEAU_API_TOKEN")
+            server_url = config.get("TABLEAU_SERVER_URL")
+            fetcher = DataFetcher(server_url, token)
+            df_dict = fetcher.fetch_data()
+            
+            cache_instance = DataCache(app)
+            base_key = "tableau_data"
+            cache_instance.set_data_dict(base_key, df_dict)
+            logger.info("Data fetched and cached successfully.")
+            return True
+        except Exception as e:
+            logger.error(f"Error in fetch_and_cache_data task: {str(e)}")
+            self.retry(exc=e)
