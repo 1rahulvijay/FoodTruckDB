@@ -1,45 +1,25 @@
-from flask import Blueprint, render_template, request
-from app import create_app, celery  # Import create_app and celery from __init__.py
-from app.models import KPIs, DataCache, RedisCache, FileCache  # Import models from app.models
-from app import config  # Import config module
-
-main_bp = Blueprint('main', __name__)
-
-# Register Blueprint routes (moved to __init__.py, but kept here for clarity)
-# app.register_blueprint(main_bp)  # This line is handled in __init__.py
-
-@main_bp.route('/', methods=['GET', 'POST'])
-def index():
-    # Determine cache backend based on configuration
-    cache = RedisCache() if config.PREFER_REDIS else FileCache(config.CACHE_DIR)
-    data_cache = DataCache(cache)
-    
-    # Define view IDs to fetch (example values)
-    view_ids = ["view1", "view2", "view3"]
-    
-    # Retrieve cached data
-    df_dict = data_cache.get_data_dict("tableau_data", view_ids)
-
-    # Handle filters from the form
-    filters = request.form.getlist('filters') if request.method == 'POST' else []
-    kpi_instance = KPIs()
-
-    # Compute metrics in parallel
-    metrics = {}
-    tasks = []
-    for view_id, df in df_dict.items():
-        if df is not None and not isinstance(df, str):  # Ensure df is a DataFrame, not an error string
-            if filters:
-                df = df[df['category'].isin(filters)]  # Apply filters
-            tasks.append(lambda vid=view_id, d=df: {
-                'value_counts': kpi_instance.get_value_counts(d, 'category'),
-                'pivot_table': kpi_instance.create_pivot(d, 'date', 'category', 'value')
-            })
-
-    # Run metric computation in parallel
-    from app.utils import Utils
-    metric_results = Utils.run_parallel_tasks(tasks)
-    for view_id, result in zip(view_ids, metric_results):
-        metrics[view_id] = result
-
-    return render_template('index.html', metrics=metrics, filters=filters)
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tableau Metrics Dashboard</title>
+</head>
+<body>
+    <h1>Tableau Metrics Dashboard</h1>
+    <form method="POST">
+        <label>Filters:</label>
+        <select name="filters" multiple>
+            <option value="filter1">Filter 1</option>
+            <option value="filter2">Filter 2</option>
+            <option value="filter3">Filter 3</option>
+        </select>
+        <button type="submit">Apply Filters</button>
+    </form>
+    {% for view_id, metric in metrics.items() %}
+        <h2>{{ view_id }}</h2>
+        <h3>Value Counts</h3>
+        <pre>{{ metric.value_counts.to_html()|safe }}</pre>
+        <h3>Pivot Table</h3>
+        <pre>{{ metric.pivot_table.to_html()|safe }}</pre>
+    {% endfor %}
+</body>
+</html>
