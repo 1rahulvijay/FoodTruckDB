@@ -1,25 +1,6 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Tableau Metrics Dashboard</title>
-</head>
-<body>
-    <h1>Tableau Metrics Dashboard</h1>
-    <form method="POST">
-        <label>Filters:</label>
-        <select name="filters" multiple>
-            <option value="filter1">Filter 1</option>
-            <option value="filter2">Filter 2</option>
-            <option value="filter3">Filter 3</option>
-        </select>
-        <button type="submit">Apply Filters</button>
-    </form>
-    {% for view_id, metric in metrics.items() %}
-        <h2>{{ view_id }}</h2>
-        <h3>Value Counts</h3>
-        <pre>{{ metric.value_counts.to_html()|safe }}</pre>
-        <h3>Pivot Table</h3>
-        <pre>{{ metric.pivot_table.to_html()|safe }}</pre>
-    {% endfor %}
-</body>
-</html>
+from app import create_app
+
+app = create_app()
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=8000)
