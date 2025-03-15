@@ -1,31 +1,45 @@
 from flask import Blueprint, render_template, request
-from app import app, celery
-from models import KPIs, DataCache, RedisCache, FileCache
-import config
+from app import create_app, celery  # Import create_app and celery from __init__.py
+from app.models import KPIs, DataCache, RedisCache, FileCache  # Import models from app.models
+from app import config  # Import config module
 
 main_bp = Blueprint('main', __name__)
 
-# Register Blueprint routes
-app.register_blueprint(main_bp)
+# Register Blueprint routes (moved to __init__.py, but kept here for clarity)
+# app.register_blueprint(main_bp)  # This line is handled in __init__.py
 
 @main_bp.route('/', methods=['GET', 'POST'])
 def index():
-    cache = RedisCache() if config.PREFER_REDIS else FileCache()
+    # Determine cache backend based on configuration
+    cache = RedisCache() if config.PREFER_REDIS else FileCache(config.CACHE_DIR)
     data_cache = DataCache(cache)
+    
+    # Define view IDs to fetch (example values)
     view_ids = ["view1", "view2", "view3"]
+    
+    # Retrieve cached data
     df_dict = data_cache.get_data_dict("tableau_data", view_ids)
 
+    # Handle filters from the form
     filters = request.form.getlist('filters') if request.method == 'POST' else []
     kpi_instance = KPIs()
 
+    # Compute metrics in parallel
     metrics = {}
+    tasks = []
     for view_id, df in df_dict.items():
-        if df is not None:
+        if df is not None and not isinstance(df, str):  # Ensure df is a DataFrame, not an error string
             if filters:
-                df = df[df['category'].isin(filters)]
-            metrics[view_id] = {
-                'value_counts': kpi_instance.get_value_counts(df, 'category'),
-                'pivot_table': kpi_instance.create_pivot(df, 'date', 'category', 'value')
-            }
+                df = df[df['category'].isin(filters)]  # Apply filters
+            tasks.append(lambda vid=view_id, d=df: {
+                'value_counts': kpi_instance.get_value_counts(d, 'category'),
+                'pivot_table': kpi_instance.create_pivot(d, 'date', 'category', 'value')
+            })
+
+    # Run metric computation in parallel
+    from app.utils import Utils
+    metric_results = Utils.run_parallel_tasks(tasks)
+    for view_id, result in zip(view_ids, metric_results):
+        metrics[view_id] = result
 
     return render_template('index.html', metrics=metrics, filters=filters)
