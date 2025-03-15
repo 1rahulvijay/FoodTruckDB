@@ -1,0 +1,210 @@
+import json
+import logging
+import requests
+import pandas as pd
+import os
+import pickle
+import redis
+from typing import Dict, Optional, Union, List
+from flask import Flask, jsonify
+from config import (
+    PREFER_REDIS, REDIS_HOST, REDIS_PORT, REDIS_DB,
+    CACHE_DIR, CACHE_DEFAULT_TIMEOUT,
+    TABLEAU_SERVER_URL, TABLEAU_API_TOKEN
+)
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Flask app setup
+app = Flask(__name__)
+
+# Custom cache classes
+class RedisCache:
+    """Redis-based cache implementation."""
+    def __init__(self, host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB):
+        self.client = redis.Redis(host=host, port=port, db=db)
+        try:
+            self.client.ping()
+            logger.info("Connected to Redis")
+        except redis.RedisError as e:
+            raise redis.RedisError(f"Cannot connect to Redis: {str(e)}")
+
+    def set(self, key: str, df: pd.DataFrame, ttl: int = CACHE_DEFAULT_TIMEOUT) -> None:
+        """Store a DataFrame in Redis as JSON with TTL."""
+        value = df.to_json(orient='records')
+        self.client.setex(key, ttl, value)
+
+    def get(self, key: str) -> Optional[pd.DataFrame]:
+        """Retrieve a DataFrame from Redis."""
+        data = self.client.get(key)
+        if data:
+            return pd.read_json(data, orient='records')
+        return None
+
+class FileCache:
+    """File-based cache implementation."""
+    def __init__(self, cache_dir: str = CACHE_DIR):
+        self.cache_dir = cache_dir
+        if not os.path.exists(cache_dir):
+            os.makedirs(cache_dir)
+            logger.info(f"Created cache directory: {cache_dir}")
+
+    def set(self, key: str, df: pd.DataFrame, ttl: int = CACHE_DEFAULT_TIMEOUT) -> None:
+        """Store a DataFrame in a file as JSON (TTL not enforced)."""
+        file_path = os.path.join(self.cache_dir, f"{key}.json")
+        df.to_json(file_path, orient='records')
+
+    def get(self, key: str) -> Optional[pd.DataFrame]:
+        """Retrieve a DataFrame from a file."""
+        file_path = os.path.join(self.cache_dir, f"{key}.json")
+        if os.path.exists(file_path):
+            return pd.read_json(file_path, orient='records')
+        return None
+
+# Cache selection based on PREFER_REDIS
+if PREFER_REDIS:
+    try:
+        cache = RedisCache()
+        logger.info("Using Redis cache")
+    except redis.RedisError as e:
+        logger.warning(f"Redis unavailable ({str(e)}), falling back to file cache")
+        cache = FileCache()
+else:
+    cache = FileCache()
+    logger.info("Using file cache")
+
+class DataFetcher:
+    """Class to handle data fetching from Tableau Server."""
+    def __init__(self, server_url: str, api_token: str):
+        self.server_url = server_url
+        self.api_token = api_token
+        self.logger = logging.getLogger(__name__)
+
+    def fetch_data(self) -> Dict[str, pd.DataFrame]:
+        """Fetch data from Tableau Server and return a dict with 3 DataFrames."""
+        try:
+            headers = {'Authorization': f'Bearer {self.api_token}'}
+            response = requests.get(f'{self.server_url}/api/data', headers=headers, timeout=600)
+            response.raise_for_status()
+            data = response.json()
+            # Assuming Tableau API returns a dict like {"view1": [...], "view2": [...], "view3": [...]}
+            # Adjust this based on your actual API response structure
+            df_dict = {}
+            if isinstance(data, dict) and len(data) == 3:
+                for view_id, view_data in data.items():
+                    df_dict[view_id] = pd.DataFrame(view_data)
+            else:
+                # Fallback: Simulate 3 DataFrames if the API response is unexpected
+                self.logger.warning("Unexpected API response, simulating 3 DataFrames")
+                df_dict = {
+                    "view1": pd.DataFrame({"value": [1, 2, 3]}),
+                    "view2": pd.DataFrame({"value": [4, 5, 6]}),
+                    "view3": pd.DataFrame({"value": [7, 8, 9]})
+                }
+            self.logger.info(f"Fetched data with {len(df_dict)} DataFrames from Tableau Server.")
+            return df_dict
+        except Exception as e:
+            self.logger.error(f"Failed to fetch data: {str(e)}")
+            raise
+
+class DataCache:
+    """Class to manage caching with the selected backend."""
+    def __init__(self, cache_backend):
+        self.cache = cache_backend
+        self.logger = logging.getLogger(__name__)
+
+    def set_data_dict(self, base_key: str, df_dict: Dict[str, pd.DataFrame], ttl: int = CACHE_DEFAULT_TIMEOUT) -> None:
+        """Cache a dict of 3 DataFrames."""
+        try:
+            for view_id, df in df_dict.items():
+                key = f"{base_key}_{view_id}"
+                self.cache.set(key, df, ttl)
+            self.logger.info(f"Cached {len(df_dict)} DataFrames with base key: {base_key}")
+        except Exception as e:
+            self.logger.error(f"Failed to cache DataFrame dict: {str(e)}")
+            raise
+
+    def get_data_dict(self, base_key: str, view_ids: List[str]) -> Dict[str, Optional[pd.DataFrame]]:
+        """Retrieve a dict of 3 DataFrames from cache."""
+        try:
+            df_dict = {}
+            for view_id in view_ids:
+                key = f"{base_key}_{view_id}"
+                df = self.cache.get(key)
+                df_dict[view_id] = df
+                self.logger.debug(f"Cache lookup for {key}: {'hit' if df is not None else 'miss'}")
+            return df_dict
+        except Exception as e:
+            self.logger.error(f"Failed to retrieve cached DataFrame dict: {str(e)}")
+            return {view_id: None for view_id in view_ids}
+
+class MetricComputer:
+    """Class to compute metrics from DataFrame data."""
+    def __init__(self, df: pd.DataFrame):
+        self.df = df
+        self.logger = logging.getLogger(__name__)
+
+    def compute(self, metric_name: str) -> Union[float, int, None]:
+        """Compute a specific metric from the DataFrame."""
+        try:
+            if self.df.empty:
+                raise ValueError("No data available for computation")
+            if metric_name == "total_count":
+                return len(self.df)
+            elif metric_name == "avg_value":
+                if "value" not in self.df.columns:
+                    raise ValueError("'value' column not found in DataFrame")
+                return self.df["value"].mean()
+            else:
+                self.logger.warning(f"Unknown metric: {metric_name}")
+                return None
+        except Exception as e:
+            self.logger.error(f"Error computing metric {metric_name}: {str(e)}")
+            return None
+
+# Initialize components
+fetcher = DataFetcher(TABLEAU_SERVER_URL, TABLEAU_API_TOKEN)
+data_cache = DataCache(cache)
+
+@app.route('/data', methods=['GET'])
+def get_data():
+    """Fetch or retrieve cached Tableau data (3 DataFrames) and return as JSON with metrics."""
+    try:
+        # Fetch data to get view IDs (expecting 3 DataFrames)
+        df_dict = fetcher.fetch_data()
+        view_ids = list(df_dict.keys())
+        if len(view_ids) != 3:
+            logger.warning(f"Expected 3 DataFrames, got {len(view_ids)}")
+
+        # Check cache
+        cached_df_dict = data_cache.get_data_dict("tableau_data", view_ids)
+
+        # If any DataFrame is missing, fetch and cache fresh data
+        if any(df is None for df in cached_df_dict.values()):
+            logger.info("Cache miss or partial miss, fetching fresh data")
+            df_dict = fetcher.fetch_data()
+            data_cache.set_data_dict("tableau_data", df_dict)
+            cached_df_dict = df_dict
+
+        # Prepare response with metrics
+        result = {}
+        for view_id, df in cached_df_dict.items():
+            if df is not None:
+                computer = MetricComputer(df)
+                result[view_id] = {
+                    "data": df.to_dict(orient='records'),
+                    "total_count": computer.compute("total_count"),
+                    "avg_value": computer.compute("avg_value")
+                }
+            else:
+                result[view_id] = {"error": "Data not available in cache"}
+
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Error in /data endpoint: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+if __name__ == "__main__":
+    app.run(debug=True)
