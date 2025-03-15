@@ -1,26 +1,35 @@
-from . import create_app, celery
-from .models import DataFetcher, DataCache
+from app import create_app, celery
+from redis import Redis
+from models import DataFetcher, DataCache, RedisCache, FileCache
 import logging
+import config
 
+config = config.ProductionConfig
 app = create_app()
 logger = logging.getLogger(__name__)
 
 @celery.task(bind=True, max_retries=3, default_retry_delay=60)
 def fetch_and_cache_data(self, source: str = "tableau"):
-    """
-    Celery task to fetch data from Tableau (or another expensive source) and cache it.
-    """
+    """Celery task to fetch data from Tableau (or another expensive source) and cache it."""
     with app.app_context():
+        logging.basicConfig(level=config.LOG_LEVEL)
         try:
-            config = app.config
-            token = config.get("TABLEAU_API_TOKEN")
-            server_url = config.get("TABLEAU_SERVER_URL")
-            fetcher = DataFetcher(server_url, token)
+            if config.PREFER_REDIS:
+                try:
+                    cache = RedisCache()
+                    logger.info("Using Redis cache")
+                except redis.RedisError as e:
+                    logger.warning(f"Redis unavailable ({str(e)}), falling back to file cache")
+                    cache = FileCache()
+            else:
+                cache = FileCache()
+                logger.info("Using file cache")
+
+            cache_key = "tableau_data"
+            data_cache = DataCache(cache)
+            fetcher = DataFetcher(cache)
             df_dict = fetcher.fetch_data()
-            
-            cache_instance = DataCache(app)
-            base_key = "tableau_data"
-            cache_instance.set_data_dict(base_key, df_dict)
+            data_cache.set_data_dict(cache_key, df_dict)
             logger.info("Data fetched and cached successfully.")
             return True
         except Exception as e:
