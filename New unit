@@ -1,0 +1,41 @@
+from flask import Flask
+from flask_caching import Cache
+from celery import Celery
+from .config import Config
+
+# Global Flask-Caching object (if needed elsewhere)
+cache = Cache()
+celery = None
+
+def make_celery(app: Flask) -> Celery:
+    celery_instance = Celery(
+        app.import_name,
+        backend=app.config['CELERY_RESULT_BACKEND'],
+        broker=app.config['CELERY_BROKER_URL']
+    )
+    celery_instance.conf.update(app.config)
+    
+    # Ensure Celery tasks run within the Flask app context.
+    class ContextTask(celery_instance.Task):
+        def __call__(self, *args, **kwargs):
+            with app.app_context():
+                return self.run(*args, **kwargs)
+    celery_instance.Task = ContextTask
+    return celery_instance
+
+def create_app() -> Flask:
+    app = Flask(__name__, template_folder='templates')
+    app.config.from_object(Config)
+    
+    # Initialize Flask-Caching (if you want to cache views, etc.)
+    cache.init_app(app)
+    
+    # Register Blueprint routes.
+    from .routes import main_bp
+    app.register_blueprint(main_bp)
+    
+    # Setup Celery.
+    global celery
+    celery = make_celery(app)
+    
+    return app
