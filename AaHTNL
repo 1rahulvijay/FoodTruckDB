@@ -28,10 +28,23 @@
         tr:nth-child(even) {
             background-color: #f9f9f9;
         }
+        .error-message {
+            color: red;
+            text-align: center;
+            margin: 20px;
+        }
     </style>
 </head>
 <body>
     <h1>KPIs Dashboard</h1>
+
+    <!-- Display error message if present -->
+    {% if metrics['error_message'] %}
+    <div class="error-message">
+        <p>Error: {{ metrics['error_message'] }}</p>
+        <p>Please check the server logs for more details or contact the administrator.</p>
+    </div>
+    {% endif %}
 
     <!-- Performance SLA Metrics -->
     <h2>Performance SLA Metrics</h2>
@@ -88,14 +101,14 @@
         <thead>
             <tr>
                 <th>Reason Category</th>
-                <th>Grand Total</th>
+                <th>Request ID Count</th>
             </tr>
         </thead>
         <tbody>
             {% for row in metrics['get_failed_reason_category_metrics'] %}
             <tr>
                 <td>{{ row.get('Reason Category', 'N/A') }}</td>
-                <td>{{ row.get('Grand Total', 'N/A') }}</td>
+                <td>{{ row.get('Request ID Count', 'N/A') }}</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -118,7 +131,7 @@
             {% for row in metrics['get_source_system_metrics'] %}
             <tr>
                 <td>{{ row.get('Source System', 'N/A') }}</td>
-                <td>{{ row.get('count', 'N/A') }}</td>
+                <td>{{ row.get('Count', 'N/A') }}</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -141,7 +154,7 @@
             {% for row in metrics['get_completed_wfs_category_metrics'] %}
             <tr>
                 <td>{{ row.get('Category', 'N/A') }}</td>
-                <td>{{ row.get('Request ID (A number for CCB workflows)', 'N/A') }}</td>
+                <td>{{ row.get('Request ID Count', 'N/A') }}</td>
             </tr>
             {% endfor %}
         </tbody>
