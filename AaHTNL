@@ -1,166 +1,99 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>KPIs Dashboard</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-        }
-        h1, h2 {
-            text-align: center;
-        }
-        table {
-            width: 80%;
-            margin: 20px auto;
-            border-collapse: collapse;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-        .error-message {
-            color: red;
-            text-align: center;
-            margin: 20px;
-        }
-    </style>
-</head>
-<body>
-    <h1>KPIs Dashboard</h1>
+My current html is
 
-    <!-- Display error message if present -->
-    {% if metrics['error_message'] %}
-    <div class="error-message">
-        <p>Error: {{ metrics['error_message'] }}</p>
-        <p>Please check the server logs for more details or contact the administrator.</p>
-    </div>
-    {% endif %}
+<!-- Performance SLA Metrics -->
+<h2>Performance SLA Metrics</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Metric</th>
+            <th>Value</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in metrics['get_performance_sla_metrics'] %}
+        <tr>
+            <td>{{ row.get('Metric', 'N/A') }}</td>
+            <td>{{ row.get('Value', 'N/A') }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 
-    <!-- Performance SLA Metrics -->
-    <h2>Performance SLA Metrics</h2>
-    {% if metrics['get_performance_sla_metrics'] %}
-    <table>
-        <thead>
-            <tr>
-                <th>Metric</th>
-                <th>Value</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in metrics['get_performance_sla_metrics'] %}
-            <tr>
-                <td>{{ row.get('Metric', 'N/A') }}</td>
-                <td>{{ row.get('Value', 'N/A') }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <p>No data available for Performance SLA Metrics.</p>
-    {% endif %}
+<!-- Cluster Performance SLA Metrics -->
+<h2>Cluster Performance SLA Metrics</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Cluster</th>
+            <th>Performance SLA</th>
+            <th>Request ID Count</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in metrics['get_cluster_performance_sla_metrics'] %}
+        <tr>
+            <td>{{ row.get('Cluster', 'N/A') }}</td>
+            <td>{{ row.get('Performance_SLA', 'N/A') }}</td>
+            <td>{{ row.get('Request ID (CA number for CCB workflows)', 'N/A') }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 
-    <!-- Cluster Performance SLA Metrics -->
-    <h2>Cluster Performance SLA Metrics</h2>
-    {% if metrics['get_cluster_performance_sla_metrics'] %}
-    <table>
-        <thead>
-            <tr>
-                <th>Cluster</th>
-                <th>Performance SLA</th>
-                <th>Grand Total</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in metrics['get_cluster_performance_sla_metrics'] %}
-            <tr>
-                <td>{{ row.get('Cluster', 'N/A') }}</td>
-                <td>{{ row.get('Performance SLA', 'N/A') }}</td>
-                <td>{{ row.get('Grand Total', 'N/A') }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <p>No data available for Cluster Performance SLA Metrics.</p>
-    {% endif %}
+<!-- Failed Reason Category Metrics -->
+<h2>Failed Reason Category Metrics</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Reason Category</th>
+            <th>Request ID Count</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in metrics['get_failed_reason_category_metrics'] %}
+        <tr>
+            <td>{{ row.get('Reason Category', 'N/A') }}</td>
+            <td>{{ row.get('Request ID (CA number for CCB workflows)', 'N/A') }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 
-    <!-- Failed Reason Category Metrics -->
-    <h2>Failed Reason Category Metrics</h2>
-    {% if metrics['get_failed_reason_category_metrics'] %}
-    <table>
-        <thead>
-            <tr>
-                <th>Reason Category</th>
-                <th>Request ID Count</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in metrics['get_failed_reason_category_metrics'] %}
-            <tr>
-                <td>{{ row.get('Reason Category', 'N/A') }}</td>
-                <td>{{ row.get('Request ID Count', 'N/A') }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <p>No data available for Failed Reason Category Metrics.</p>
-    {% endif %}
+<!-- Source System Metrics -->
+<h2>Source System Metrics</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Source System</th>
+            <th>Count</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in metrics['get_source_system_metrics'] %}
+        <tr>
+            <td>{{ row.get('Source System', 'N/A') }}</td>
+            <td>{{ row.get('count', 'N/A') }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 
-    <!-- Source System Metrics -->
-    <h2>Source System Metrics</h2>
-    {% if metrics['get_source_system_metrics'] %}
-    <table>
-        <thead>
-            <tr>
-                <th>Source System</th>
-                <th>Count</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in metrics['get_source_system_metrics'] %}
-            <tr>
-                <td>{{ row.get('Source System', 'N/A') }}</td>
-                <td>{{ row.get('Count', 'N/A') }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <p>No data available for Source System Metrics.</p>
-    {% endif %}
+<!-- Completed WFs Category Metrics -->
+<h2>Completed Workflows by Category Metrics</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Category</th>
+            <th>Request ID Count</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in metrics['get_completed_wfs_category_metrics'] %}
+        <tr>
+            <td>{{ row.get('Category', 'N/A') }}</td>
+            <td>{{ row.get('Request ID (CA number for CCB workflows)', 'N/A') }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 
-    <!-- Completed Workflows by Category Metrics -->
-    <h2>Completed Workflows by Category Metrics</h2>
-    {% if metrics['get_completed_wfs_category_metrics'] %}
-    <table>
-        <thead>
-            <tr>
-                <th>Category</th>
-                <th>Request ID Count</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in metrics['get_completed_wfs_category_metrics'] %}
-            <tr>
-                <td>{{ row.get('Category', 'N/A') }}</td>
-                <td>{{ row.get('Request ID Count', 'N/A') }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <p>No data available for Completed Workflows by Category Metrics.</p>
-    {% endif %}
-</body>
-</html>
