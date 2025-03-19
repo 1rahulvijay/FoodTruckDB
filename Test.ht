@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>KPIs Dashboard</title>
+    <style>
+        table {
+            width: 80%;
+            margin: 20px auto;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>KPIs Dashboard</h1>
+
+    <h2>Performance SLA Metrics</h2>
+    <table>
+        <thead>
+            <tr>
+                <!-- Adjust column names based on your Tableau data -->
+                <th>Metric</th>
+                <th>Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in metrics['performance_sla_metrics'] %}
+            <tr>
+                <!-- Adjust keys based on your actual data structure -->
+                <td>{{ row.get('Metric', 'N/A') }}</td>
+                <td>{{ row.get('Value', 'N/A') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Source System Metrics</h2>
+    <table>
+        <thead>
+            <tr>
+                <!-- Adjust column names based on your Tableau data -->
+                <th>Source System</th>
+                <th>Count</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in metrics['source_system_metrics'] %}
+            <tr>
+                <!-- Adjust keys based on your actual data structure -->
+                <td>{{ row.get('Source System', 'N/A') }}</td>
+                <td>{{ row.get('count', 'N/A') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
