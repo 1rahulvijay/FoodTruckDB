@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>KPIs Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        h1, h2 {
+            text-align: center;
+        }
+        table {
+            width: 80%;
+            margin: 20px auto;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h1>KPIs Dashboard</h1>
+
+    <!-- Performance SLA Metrics -->
+    <h2>Performance SLA Metrics</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Metric</th>
+                <th>Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in metrics['get_performance_sla_metrics'] %}
+            <tr>
+                <td>{{ row.get('Metric', 'N/A') }}</td>
+                <td>{{ row.get('Value', 'N/A') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Cluster Performance SLA Metrics -->
+    <h2>Cluster Performance SLA Metrics</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Cluster</th>
+                <th>Performance SLA</th>
+                <th>Request ID Count</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in metrics['get_cluster_performance_sla_metrics'] %}
+            <tr>
+                <td>{{ row.get('Cluster', 'N/A') }}</td>
+                <td>{{ row.get('Performance_SLA', 'N/A') }}</td>
+                <td>{{ row.get('Request ID (CA number for CCB workflows)', 'N/A') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Failed Reason Category Metrics -->
+    <h2>Failed Reason Category Metrics</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Reason Category</th>
+                <th>Request ID Count</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in metrics['get_failed_reason_category_metrics'] %}
+            <tr>
+                <td>{{ row.get('Reason Category', 'N/A') }}</td>
+                <td>{{ row.get('Request ID (CA number for CCB workflows)', 'N/A') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Source System Metrics -->
+    <h2>Source System Metrics</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Source System</th>
+                <th>Count</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in metrics['get_source_system_metrics'] %}
+            <tr>
+                <td>{{ row.get('Source System', 'N/A') }}</td>
+                <td>{{ row.get('count', 'N/A') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Completed WFs Category Metrics -->
+    <h2>Completed Workflows by Category Metrics</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>Request ID Count</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in metrics['get_completed_wfs_category_metrics'] %}
+            <tr>
+                <td>{{ row.get('Category', 'N/A') }}</td>
+                <td>{{ row.get('Request ID (CA number for CCB workflows)', 'N/A') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
