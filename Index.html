@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KM KPIs Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        h2 {
+            color: #555;
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>KM KPIs Dashboard</h1>
+
+        <!-- Display Performance SLA (String) -->
+        <h2>Performance SLA</h2>
+        <p>{{ metrics.get_performance_sla_metrics }}</p>
+
+        <!-- Display Source System Metrics -->
+        <h2>Source System Metrics</h2>
+        {% if metrics.get_source_system_metrics is not none %}
+            <table>
+                <thead>
+                    <tr>
+                        {% for column in metrics.get_source_system_metrics.columns %}
+                            <th>{{ column }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for index, row in metrics.get_source_system_metrics.iterrows() %}
+                        <tr>
+                            {% for value in row %}
+                                <td>{{ value }}</td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No data available for Source System Metrics.</p>
+        {% endif %}
+
+        <!-- Display Cluster Performance SLA Metrics -->
+        <h2>Cluster Performance SLA Metrics</h2>
+        {% if metrics.get_cluster_performance_sla_metrics is not none %}
+            <table>
+                <thead>
+                    <tr>
+                        {% for column in metrics.get_cluster_performance_sla_metrics.columns %}
+                            <th>{{ column }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for index, row in metrics.get_cluster_performance_sla_metrics.iterrows() %}
+                        <tr>
+                            {% for value in row %}
+                                <td>{{ value }}</td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No data available for Cluster Performance SLA Metrics.</p>
+        {% endif %}
+
+        <!-- Display Failed Reason Category Metrics -->
+        <h2>Failed Reason Category Metrics</h2>
+        {% if metrics.get_failed_reason_category_metrics is not none %}
+            <table>
+                <thead>
+                    <tr>
+                        {% for column in metrics.get_failed_reason_category_metrics.columns %}
+                            <th>{{ column }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for index, row in metrics.get_failed_reason_category_metrics.iterrows() %}
+                        <tr>
+                            {% for value in row %}
+                                <td>{{ value }}</td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No data available for Failed Reason Category Metrics.</p>
+        {% endif %}
+
+        <!-- Display Completed Workflows Category Metrics -->
+        <h2>Completed Workflows Category Metrics</h2>
+        {% if metrics.get_completed_wfs_category_metrics is not none %}
+            <table>
+                <thead>
+                    <tr>
+                        {% for column in metrics.get_completed_wfs_category_metrics.columns %}
+                            <th>{{ column }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for index, row in metrics.get_completed_wfs_category_metrics.iterrows() %}
+                        <tr>
+                            {% for value in row %}
+                                <td>{{ value }}</td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No data available for Completed Workflows Category Metrics.</p>
+        {% endif %}
+    </div>
+</body>
+</html>
