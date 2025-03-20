@@ -1,0 +1,33 @@
+# gunicorn_config.py
+
+import multiprocessing
+import os
+
+# **Server Socket**
+bind = os.getenv("GUNICORN_BIND", "0.0.0.0:8000")  # Bind to all interfaces on port 8000
+
+# **Worker Processes & Threading**
+workers = int(os.getenv("GUNICORN_WORKERS", multiprocessing.cpu_count() * 2 + 1))  # Auto-scaling workers
+threads = int(os.getenv("GUNICORN_THREADS", 2))  # Number of threads per worker
+worker_class = os.getenv("GUNICORN_WORKER_CLASS", "uvicorn.workers.UvicornWorker")  # Use async workers
+
+# **Performance & Security**
+timeout = int(os.getenv("GUNICORN_TIMEOUT", 30))  # Maximum time for a request before killing worker
+keepalive = int(os.getenv("GUNICORN_KEEPALIVE", 5))  # Keep connections alive for reuse
+max_requests = int(os.getenv("GUNICORN_MAX_REQUESTS", 1000))  # Restart worker after X requests (prevents memory leaks)
+max_requests_jitter = int(os.getenv("GUNICORN_MAX_REQUESTS_JITTER", 100))  # Prevents all workers restarting at once
+
+# **Logging**
+accesslog = os.getenv("GUNICORN_ACCESS_LOG", "-")  # "-" means log to stdout
+errorlog = os.getenv("GUNICORN_ERROR_LOG", "-")
+loglevel = os.getenv("GUNICORN_LOG_LEVEL", "info")  # Logging level (debug, info, warning, error, critical)
+
+# **Process Management**
+proc_name = "gunicorn_flask_app"
+
+# **Graceful Shutdown & Reload**
+graceful_timeout = int(os.getenv("GUNICORN_GRACEFUL_TIMEOUT", 30))  # Extra time before forcefully killing worker
+reload = os.getenv("GUNICORN_RELOAD", "False").lower() == "true"  # Auto-reload on code changes (for dev)
+
+# **Daemon Mode (Not Recommended in Docker)**
+daemon = os.getenv("GUNICORN_DAEMON", "False").lower() == "true"
