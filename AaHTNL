@@ -1,99 +1,60 @@
-My current html is
+# Use a slim Python base image for a smaller footprint
+FROM python:3.11-slim AS base
 
-<!-- Performance SLA Metrics -->
-<h2>Performance SLA Metrics</h2>
-<table>
-    <thead>
-        <tr>
-            <th>Metric</th>
-            <th>Value</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for row in metrics['get_performance_sla_metrics'] %}
-        <tr>
-            <td>{{ row.get('Metric', 'N/A') }}</td>
-            <td>{{ row.get('Value', 'N/A') }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+# Set environment variables for better Python behavior
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=off \
+    PIP_DISABLE_PIP_VERSION_CHECK=on \
+    PIP_DEFAULT_TIMEOUT=100
 
-<!-- Cluster Performance SLA Metrics -->
-<h2>Cluster Performance SLA Metrics</h2>
-<table>
-    <thead>
-        <tr>
-            <th>Cluster</th>
-            <th>Performance SLA</th>
-            <th>Request ID Count</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for row in metrics['get_cluster_performance_sla_metrics'] %}
-        <tr>
-            <td>{{ row.get('Cluster', 'N/A') }}</td>
-            <td>{{ row.get('Performance_SLA', 'N/A') }}</td>
-            <td>{{ row.get('Request ID (CA number for CCB workflows)', 'N/A') }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-<!-- Failed Reason Category Metrics -->
-<h2>Failed Reason Category Metrics</h2>
-<table>
-    <thead>
-        <tr>
-            <th>Reason Category</th>
-            <th>Request ID Count</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for row in metrics['get_failed_reason_category_metrics'] %}
-        <tr>
-            <td>{{ row.get('Reason Category', 'N/A') }}</td>
-            <td>{{ row.get('Request ID (CA number for CCB workflows)', 'N/A') }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+# Set working directory
+WORKDIR /app
 
-<!-- Source System Metrics -->
-<h2>Source System Metrics</h2>
-<table>
-    <thead>
-        <tr>
-            <th>Source System</th>
-            <th>Count</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for row in metrics['get_source_system_metrics'] %}
-        <tr>
-            <td>{{ row.get('Source System', 'N/A') }}</td>
-            <td>{{ row.get('count', 'N/A') }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+# Create a non-root user for security
+RUN useradd -m -u 1000 appuser
+USER appuser
 
-<!-- Completed WFs Category Metrics -->
-<h2>Completed Workflows by Category Metrics</h2>
-<table>
-    <thead>
-        <tr>
-            <th>Category</th>
-            <th>Request ID Count</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for row in metrics['get_completed_wfs_category_metrics'] %}
-        <tr>
-            <td>{{ row.get('Category', 'N/A') }}</td>
-            <td>{{ row.get('Request ID (CA number for CCB workflows)', 'N/A') }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+# Stage 1: Build dependencies
+FROM base AS builder
 
+# Switch back to root for installing dependencies
+USER root
+
+# Create a directory for pip configuration
+RUN mkdir -p /etc/pip
+
+# Copy the pip configuration file (assumes you have a pip.conf in your project root)
+COPY pip.conf /etc/pip/pip.conf
+
+# Set the PIP_CONFIG_FILE environment variable to point to the custom pip.conf
+ENV PIP_CONFIG_FILE=/etc/pip/pip.conf
+
+# Copy the requirements.txt file
+COPY --chown=appuser:appuser requirements.txt .
+
+# Install dependencies
+RUN pip install --user -r requirements.txt
+
+# Stage 2: Final image
+FROM base AS production
+
+# Copy installed dependencies from builder stage
+COPY --from=builder /home/appuser/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /home/appuser/.local/bin /usr/local/bin
+
+# Copy application code
+COPY --chown=appuser:appuser . .
+
+# Expose the port your app runs on (default for Gunicorn)
+EXPOSE 8000
+
+# Set the entrypoint to run Gunicorn with your config
+CMD ["gunicorn", "--config", "gunicorn_config.py", "app:app"]
